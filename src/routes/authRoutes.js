@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const prisma = require('../db');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key';
@@ -128,6 +129,30 @@ router.post('/login', async (req, res) => {
     );
 
     res.json({ access_token: token });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+/**
+ * @swagger
+ * /user/account:
+ *   delete:
+ *     summary: Delete your own user account
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Account successfully deleted
+ */
+router.delete('/user/account', auth, async (req, res) => {
+  try {
+    await prisma.user.delete({
+      where: { id: req.user.userId }
+    });
+    res.json({ message: 'Account and all associated notes successfully deleted' });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
