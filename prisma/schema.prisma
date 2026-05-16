@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  password_hash String
+  notes         Note[]       @relation("UserNotes")
+}
+
+model Note {
+  id           Int          @id @default(autoincrement())
+  title        String
+  content      String
+  is_trashed   Boolean      @default(false)
+  is_pinned    Boolean      @default(false)
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+  
+  owner_id     Int
+  owner        User         @relation("UserNotes", fields: [owner_id], references: [id], onDelete: Cascade)
+  
+  shared_users SharedNote[]
+}
+
+model SharedNote {
+  id                Int      @id @default(autoincrement())
+  note_id           Int
+  note              Note     @relation(fields: [note_id], references: [id], onDelete: Cascade)
+  shared_with_email String
+  permission        String   @default("Viewer")
+
+  @@unique([note_id, shared_with_email])
+}
